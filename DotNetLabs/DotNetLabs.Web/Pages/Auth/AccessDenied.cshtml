@@ -1,0 +1,12 @@
+@page "/access-denied"
+@model DotNetLabs.Web.Pages.Auth.AccessDenied
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Access Denied";
+}
+
+<h1 class="mb-3">Access denied</h1>
+<p>You do not have permission to view this page.</p>
+<a asp-page="/Index" class="btn btn-primary">Go home</a>
+

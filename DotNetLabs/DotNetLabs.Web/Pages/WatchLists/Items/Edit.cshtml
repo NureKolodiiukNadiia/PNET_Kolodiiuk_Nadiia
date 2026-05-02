@@ -1,0 +1,20 @@
+@page "{watchListId:long}/{itemId:long}"
+@model DotNetLabs.Web.Pages.WatchLists.Items.EditModel
+@{ ViewData["Title"] = "Edit WatchList Item"; }
+<h1>Edit WatchList Item</h1>
+<div class="row">
+    <div class="col-md-4">
+        <form method="post">
+            <input type="hidden" asp-for="WatchListId" />
+            <input type="hidden" asp-for="ItemId" />
+            <div class="form-group">
+                <label asp-for="TitleId" class="control-label"></label>
+                <input asp-for="TitleId" class="form-control" />
+            </div>
+            <div class="form-group mt-2">
+                <input type="submit" value="Save" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+<div><a asp-page="./Index" asp-route-watchListId="@Model.WatchListId">Back to Items</a></div>

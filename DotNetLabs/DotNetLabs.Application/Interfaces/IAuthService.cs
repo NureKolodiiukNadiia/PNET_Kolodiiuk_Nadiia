@@ -7,7 +7,7 @@ public interface IAuthService
 {
     Task<Result> SignUpAsync(string email, string password);
 
-    Task<Result<SignInResponse>> SignInAsync(string email, string password, string ipAddress, CancellationToken ct);
+    Task<Result<SignInResponse>> SignInAsync(string email, string password, CancellationToken ct);
 
     Task<Result> SignOutAsync(string ipAddress, CancellationToken ct);
 }

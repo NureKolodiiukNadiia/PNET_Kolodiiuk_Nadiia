@@ -1,0 +1,20 @@
+@page
+@model DotNetLabs.Web.Pages.Votes.EditModel
+@{ ViewData["Title"] = "Edit Vote"; }
+<h1>Edit Vote</h1>
+<div class="row">
+    <div class="col-md-4">
+        <form method="post">
+            <input type="hidden" asp-for="TitleId" />
+            <input type="hidden" asp-for="UserId" />
+            <div class="form-group">
+                <label asp-for="Value" class="control-label"></label>
+                <input asp-for="Value" class="form-control" />
+            </div>
+            <div class="form-group mt-2">
+                <input type="submit" value="Save" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+<div><a asp-page="./Index">Back to List</a></div>

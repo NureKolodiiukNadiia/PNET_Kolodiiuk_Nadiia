@@ -1,0 +1,20 @@
+@page "/sign-out"
+@model DotNetLabs.Web.Pages.Auth.SignOut
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Sign Out";
+}
+
+<h1 class="mb-3">Sign out</h1>
+
+<form method="post" class="col-12 col-md-6">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <p>Are you sure you want to sign out?</p>
+    <button type="submit" class="btn btn-danger">Sign out</button>
+    <a asp-page="/Index" class="btn btn-link">Cancel</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

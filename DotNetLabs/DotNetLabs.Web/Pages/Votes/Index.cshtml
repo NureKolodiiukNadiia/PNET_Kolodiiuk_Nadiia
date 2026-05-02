@@ -1,0 +1,23 @@
+@page
+@model DotNetLabs.Web.Pages.Votes.IndexModel
+@{ ViewData["Title"] = "Votes"; }
+<h1>Votes</h1>
+<p><a asp-page="Create" class="btn btn-primary">Create New Vote</a></p>
+<table class="table">
+    <thead><tr><th>TitleId</th><th>UserId</th><th>Value</th><th>Actions</th></tr></thead>
+    <tbody>
+@if (Model.Votes != null) {
+    @foreach (var item in Model.Votes) {
+        <tr>
+            <td>@item.TitleId</td>
+            <td>@item.UserId</td>
+            <td>@item.Value</td>
+            <td>
+                <a asp-page="./Edit" asp-route-titleId="@item.TitleId" asp-route-userId="@item.UserId">Edit</a> |
+                <a asp-page="./Delete" asp-route-titleId="@item.TitleId" asp-route-userId="@item.UserId">Delete</a>
+            </td>
+        </tr>
+    }
+}
+    </tbody>
+</table>

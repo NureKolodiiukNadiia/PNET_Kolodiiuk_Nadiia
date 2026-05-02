@@ -1,0 +1,19 @@
+@page "{watchListId:long}"
+@model DotNetLabs.Web.Pages.WatchLists.Items.CreateModel
+@{ ViewData["Title"] = "Add WatchList Item"; }
+<h1>Add WatchList Item</h1>
+<div class="row">
+    <div class="col-md-4">
+        <form method="post">
+            <input type="hidden" asp-for="WatchListId" />
+            <div class="form-group">
+                <label asp-for="TitleId" class="control-label"></label>
+                <input asp-for="TitleId" class="form-control" />
+            </div>
+            <div class="form-group mt-2">
+                <input type="submit" value="Create" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+<div><a asp-page="./Index" asp-route-watchListId="@Model.WatchListId">Back to Items</a></div>

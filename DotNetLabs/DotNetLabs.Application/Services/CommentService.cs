@@ -11,21 +11,23 @@ namespace DotNetLabs.Application.Services;
 
 public sealed class CommentService : ICommentService
 {
-    private readonly WatchlyDbContext _dbContext;
+    private readonly AppDbContext _dbContext;
 
-    public CommentService(WatchlyDbContext context)
+    public CommentService(AppDbContext context)
     {
         _dbContext = context;
     }
 
-    public async Task<Result<IEnumerable<CommentDto>>> GetCommentsAsync(long id, bool isTitle, CancellationToken ct)
+    public async Task<Result<IEnumerable<CommentDto>>> GetAllCommentsPagedAsync(int page, int pageSize, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         try
         {
             var query = _dbContext.Comments
                 .Include(c => c.User)
-                .Where(c => c.TitleId == id)
+                .OrderBy(c => c.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(c => new CommentDto(
                     c.Id,
                     c.TitleId,
@@ -49,7 +51,7 @@ public sealed class CommentService : ICommentService
         }
         catch (DbException e)
         {
-            return Result.Fail<IEnumerable<CommentDto>>($"DB error: {e.Message}");
+            return Result.Fail<IEnumerable<CommentDto>>($"DB problems: {e.Message}");
         }
         catch (Exception e)
         {
@@ -119,7 +121,6 @@ public sealed class CommentService : ICommentService
 
             comment.Text = text;
             comment.UpdatedAt = DateTime.UtcNow;
-            _dbContext.Update(comment);
             await _dbContext.SaveChangesAsync(ct);
 
             return Result.Success();
@@ -161,7 +162,6 @@ public sealed class CommentService : ICommentService
             }
 
             comment.IsDeleted = true;
-            _dbContext.Update(comment);
             await _dbContext.SaveChangesAsync(ct);
 
             return Result.Success();
@@ -177,6 +177,50 @@ public sealed class CommentService : ICommentService
         catch (Exception e)
         {
             return Result.Fail($"Error: {e.Message}");
+        }
+    }
+
+    public async Task<Result<CommentDto>> GetCommentByIdAsync(long commentId, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        try
+        {
+            var comment = await _dbContext.Comments
+                .Include(c => c.User)
+                .Where(c => c.Id == commentId)
+                .Select(c => new CommentDto(
+                    c.Id,
+                    c.TitleId,
+                    true,
+                    c.UserId,
+                    c.UpdatedAt,
+                    c.Text,
+                    new UserDto
+                    {
+                        Id = c.User.Id,
+                        Email = c.User.Email,
+                        UserName = c.User.UserName
+                    }))
+                .FirstOrDefaultAsync(ct);
+
+            if (comment is null)
+            {
+                return Result.Fail<CommentDto>("Comment not found");
+            }
+
+            return Result.Success(comment);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (DbException e)
+        {
+            return Result.Fail<CommentDto>($"DB problems: {e.Message}");
+        }
+        catch (Exception e)
+        {
+            return Result.Fail<CommentDto>($"Error: {e.Message}");
         }
     }
 }

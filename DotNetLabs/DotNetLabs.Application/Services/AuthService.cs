@@ -1,7 +1,10 @@
+using System.Security.Claims;
 using DotNetLabs.Application.Interfaces;
 using DotNetLabs.Application.Models.Auth;
 using DotNetLabs.Core.Entities;
 using DotNetLabs.Core.Models;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 
 namespace DotNetLabs.Application.Services;
@@ -32,7 +35,7 @@ public class AuthService : IAuthService
             if (!roleRes.Succeeded)
             {
                 var codes = roleRes.Errors.Select(err => err.Code);
-                
+
                 return Result.Fail(
                     $"Failed to add to role: {string.Join(", ", codes)}");
             }
@@ -46,34 +49,81 @@ public class AuthService : IAuthService
     }
 
     public async Task<Result<SignInResponse>> SignInAsync(
-        string email, string password, string ipAddress, CancellationToken ct)
+        string email, string password, CancellationToken ct)
     {
-        throw new NotImplementedException();
-        // var validationResult = await ValidateUserCredentialsAsync(email, password);
-        // if (validationResult.Failure)
-        // {
-        //     return Result.Fail<SignInResponse>("User credentials validation failure");
-        // }
-        //
-        // var tokensRes = await GenerateTokensAsync(validationResult.Value, ipAddress, ct);
-        // if (tokensRes.Failure)
-        // {
-        //     return Result.Fail<SignInResponse>(tokensRes.Error);
-        // }
-        //
-        // var userRoles = await _userManager.GetRolesAsync(validationResult.Value);
-        //
-        // var response = CreateSignInResponse(tokensRes.Value, email,
-        //     validationResult.Value.UserName, validationResult.Value.Id, userRoles);
-        //
-        // return Result.Success(response);
+        try
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                return Result.Fail<SignInResponse>("User not found");
+            }
+
+            var isPasswordCorrect = await _userManager.CheckPasswordAsync(user, password);
+            if (!isPasswordCorrect)
+            {
+                return Result.Fail<SignInResponse>("Invalid password");
+            }
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, user.UserName),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            };
+
+            var roles = await _userManager.GetRolesAsync(user);
+            foreach (var role in roles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
+
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var principal = new ClaimsPrincipal(claimsIdentity);
+            var authProperties = new AuthenticationProperties()
+            {
+                IsPersistent = true,
+                ExpiresUtc = DateTimeOffset.UtcNow.Add(TimeSpan.FromDays(30))
+            };
+
+            return Result.Success(new SignInResponse
+            {
+                AuthenticationProperties = authProperties,
+                Principal = principal,
+                User = new UserDto
+                {
+                    Id = user.Id,
+                    Email = user.Email,
+                    UserName = user.UserName,
+                    UserRoles = roles
+                }
+            });
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception e)
+        {
+            return Result.Fail<SignInResponse>("Error signing in");
+        }
     }
 
     public async Task<Result> SignOutAsync(string ipAddress, CancellationToken ct)
     {
-        throw new NotImplementedException();
-
-        return Result.Success();
+        try
+        {
+            ct.ThrowIfCancellationRequested();
+            await Task.CompletedTask;
+            return Result.Success();
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception e)
+        {
+            return Result.Fail($"Error signing out: {e.Message}");
+        }
     }
 
     private async Task<Result<User>> ValidateUserCredentialsAsync(string email, string password)

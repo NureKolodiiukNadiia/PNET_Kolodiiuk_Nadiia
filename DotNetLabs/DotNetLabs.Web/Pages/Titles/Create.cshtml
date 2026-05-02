@@ -1,0 +1,83 @@
+@page
+@model DotNetLabs.Web.Pages.Titles.CreateModel
+@{
+    ViewData["Title"] = "Create Title";
+}
+
+<h1>Create Title</h1>
+<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+<div class="row">
+    <div class="col-12 col-lg-8">
+        <form method="post">
+            <input type="hidden" asp-for="Page" />
+            <input type="hidden" asp-for="PageSize" />
+            <div class="mb-2">
+                <label asp-for="Input.Name" class="form-label"></label>
+                <input asp-for="Input.Name" class="form-control" />
+                <span asp-validation-for="Input.Name" class="text-danger"></span>
+            </div>
+            <div class="mb-2">
+                <label asp-for="Input.Overview" class="form-label"></label>
+                <textarea asp-for="Input.Overview" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="mb-2">
+                <label asp-for="Input.ReleaseDate" class="form-label"></label>
+                <input asp-for="Input.ReleaseDate" class="form-control" type="date" />
+            </div>
+            <div class="mb-2">
+                <label asp-for="Input.Runtime" class="form-label"></label>
+                <input asp-for="Input.Runtime" class="form-control" />
+            </div>
+            <div class="mb-2">
+                <label asp-for="Input.AvgTmdbRating" class="form-label"></label>
+                <input asp-for="Input.AvgTmdbRating" class="form-control" />
+            </div>
+            <div class="mb-2 form-check">
+                <input asp-for="Input.IsAdult" class="form-check-input" />
+                <label asp-for="Input.IsAdult" class="form-check-label"></label>
+            </div>
+            <div class="mb-2">
+                <label asp-for="Input.HomePage" class="form-label"></label>
+                <input asp-for="Input.HomePage" class="form-control" />
+            </div>
+            <div class="mb-2">
+                <label asp-for="Input.PosterUrl" class="form-label"></label>
+                <input asp-for="Input.PosterUrl" class="form-control" />
+            </div>
+            <div class="mb-2">
+                <label asp-for="Input.Tagline" class="form-label"></label>
+                <input asp-for="Input.Tagline" class="form-control" />
+            </div>
+            <div class="mb-2">
+                <label asp-for="Input.Director" class="form-label"></label>
+                <input asp-for="Input.Director" class="form-control" />
+            </div>
+            <div class="mb-2">
+                <label asp-for="Input.Actors" class="form-label"></label>
+                <input asp-for="Input.Actors" class="form-control" />
+            </div>
+            <div class="mb-2">
+                <label asp-for="Input.ProductionCompanies" class="form-label"></label>
+                <input asp-for="Input.ProductionCompanies" class="form-control" />
+            </div>
+            <div class="mb-2">
+                <label asp-for="Input.Genres" class="form-label"></label>
+                <input asp-for="Input.Genres" class="form-control" />
+            </div>
+            <div class="mb-2">
+                <label asp-for="Input.Keywords" class="form-label"></label>
+                <input asp-for="Input.Keywords" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.SpokenLanguages" class="form-label"></label>
+                <input asp-for="Input.SpokenLanguages" class="form-control" />
+            </div>
+            <button type="submit" class="btn btn-primary">Create</button>
+            <a asp-page="/Index" asp-route-page="@Model.Page" asp-route-pageSize="@Model.PageSize" class="btn btn-link">Cancel</a>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

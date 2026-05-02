@@ -14,7 +14,7 @@ internal sealed class VoteConfiguration : IEntityTypeConfiguration<Vote>
         builder.Property(v => v.Value).IsRequired();
         builder.Property(v => v.UpdatedAt).IsRequired();
         builder.Property(v => v.TitleId).IsRequired();
-        builder.Property(v => v.UserId).IsRequired();
+        builder.Property(v => v.UserId);
 
         builder.HasOne(v => v.Title)
             .WithMany(t => t.Votes)

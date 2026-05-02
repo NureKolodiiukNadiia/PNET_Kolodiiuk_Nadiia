@@ -10,8 +10,10 @@ public static class IServiceCollectionExtensions
     {
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ICommentService, CommentService>();
-        services.AddScoped<IContentService, ContentService>();
+        services.AddScoped<ITitleService, TitleService>();
         services.AddScoped<IUserManagementService, UserManagementService>();
         services.AddScoped<IVoteService, VoteService>();
+        services.AddScoped<IWatchListService, WatchListService>();
+        services.AddScoped<ISqlTaskService, SqlTaskService>();
     }
 }

@@ -1,0 +1,25 @@
+@page "{watchListId:long}"
+@model DotNetLabs.Web.Pages.WatchLists.Items.IndexModel
+@{ ViewData["Title"] = "WatchList Items"; }
+<h1>WatchList Items</h1>
+<p>
+    <a asp-page="./Create" asp-route-watchListId="@Model.WatchListId" class="btn btn-primary">Add Item</a>
+</p>
+<table class="table">
+    <thead><tr><th>ItemId</th><th>TitleId</th><th>Actions</th></tr></thead>
+    <tbody>
+@if (Model.Items != null) {
+    @foreach (var item in Model.Items) {
+        <tr>
+            <td>@item.Id</td>
+            <td>@item.TitleId</td>
+            <td>
+                <a asp-page="./Edit" asp-route-watchListId="@Model.WatchListId" asp-route-itemId="@item.Id">Edit</a> |
+                <a asp-page="./Delete" asp-route-watchListId="@Model.WatchListId" asp-route-itemId="@item.Id">Delete</a>
+            </td>
+        </tr>
+    }
+}
+    </tbody>
+</table>
+<div><a asp-page="/WatchLists/Index">Back to WatchLists</a></div>

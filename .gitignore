@@ -1,6 +1,7 @@
 .idea/
 .env
 Logs/
+appsettings.Development.json
 
 # Build results
 [Bb]in/

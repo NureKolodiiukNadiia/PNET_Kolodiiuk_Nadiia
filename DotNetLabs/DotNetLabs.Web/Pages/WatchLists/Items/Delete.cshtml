@@ -1,0 +1,21 @@
+@page "{watchListId:long}/{itemId:long}"
+@model DotNetLabs.Web.Pages.WatchLists.Items.DeleteModel
+@{ ViewData["Title"] = "Delete WatchList Item"; }
+<h1>Delete WatchList Item</h1>
+<h3>Are you sure you want to remove this item?</h3>
+<div>
+    <h4>WatchList Item</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">ItemId</dt>
+        <dd class="col-sm-10">@Model.ItemId</dd>
+        <dt class="col-sm-2">TitleId</dt>
+        <dd class="col-sm-10">@Model.TitleId</dd>
+    </dl>
+    <form method="post">
+        <input type="hidden" asp-for="WatchListId" />
+        <input type="hidden" asp-for="ItemId" />
+        <input type="submit" value="Delete" class="btn btn-danger" /> |
+        <a asp-page="./Index" asp-route-watchListId="@Model.WatchListId">Back to Items</a>
+    </form>
+</div>
