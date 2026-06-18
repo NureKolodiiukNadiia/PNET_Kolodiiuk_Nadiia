@@ -18,14 +18,24 @@ public class IndexModel : PageModel
     public IEnumerable<TitleShortInfo> Titles { get; private set; } = Array.Empty<TitleShortInfo>();
 
     [BindProperty(SupportsGet = true)]
-    public int Page { get; set; } = 1;
+    public int PageNumber { get; set; } = 1;
 
     [BindProperty(SupportsGet = true)]
     public int PageSize { get; set; } = DefaultPageSize;
 
     public async Task<IActionResult> OnGetAsync(CancellationToken ct)
     {
-        var result = await _titleService.GetAllTitlesPagedAsync(Page, PageSize, ct);
+        if (PageNumber < 1)
+        {
+            PageNumber = 1;
+        }
+
+        if (PageSize < 1)
+        {
+            PageSize = DefaultPageSize;
+        }
+
+        var result = await _titleService.GetAllTitlesPagedAsync(PageNumber, PageSize, ct);
         if (result.IsSuccess)
         {
             Titles = result.Value;
@@ -40,7 +50,7 @@ public class IndexModel : PageModel
         if (!result.IsSuccess)
         {
             ModelState.AddModelError(string.Empty, result.Error);
-            var listResult = await _titleService.GetAllTitlesPagedAsync(Page, PageSize, ct);
+            var listResult = await _titleService.GetAllTitlesPagedAsync(PageNumber, PageSize, ct);
             if (listResult.IsSuccess)
             {
                 Titles = listResult.Value;
@@ -49,6 +59,6 @@ public class IndexModel : PageModel
             return Page();
         }
 
-        return RedirectToPage("/Index", new { page = Page, pageSize = PageSize });
+        return RedirectToPage("/Index", new { pageNumber = PageNumber, pageSize = PageSize });
     }
 }

@@ -197,3 +197,163 @@ BEGIN
     DEALLOCATE watchlist_cursor;
 END;
 GO
+
+CREATE OR ALTER TRIGGER trg_Votes_RecalculateTitleRating
+ON Votes
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    ;WITH ChangedTitles AS
+    (
+        SELECT DISTINCT i.TitleId
+        FROM inserted i
+        WHERE i.TitleId IS NOT NULL
+    ),
+    AvgByTitle AS
+    (
+        SELECT v.TitleId, AVG(CAST(v.[Value] AS FLOAT)) AS AvgVote
+        FROM Votes v
+        INNER JOIN ChangedTitles ct ON ct.TitleId = v.TitleId
+        GROUP BY v.TitleId
+    )
+    UPDATE t
+    SET
+        t.AvgTmdbRating = CAST(abt.AvgVote AS REAL),
+        t.UpdatedAt = GETDATE()
+    FROM Titles t
+    INNER JOIN AvgByTitle abt ON abt.TitleId = t.Id;
+END;
+GO
+
+-- ========================================================================================
+
+DECLARE @DemoUserId UNIQUEIDENTIFIER = '11111111-1111-1111-1111-111111111111';
+DECLARE @Now DATETIME2 = GETDATE();
+
+IF NOT EXISTS (SELECT 1 FROM AspNetUsers WHERE Id = @DemoUserId)
+BEGIN
+    INSERT INTO AspNetUsers
+    (
+        Id, CreatedAt, UpdatedAt, UserName, NormalizedUserName, Email, NormalizedEmail, EmailConfirmed,
+        PasswordHash, SecurityStamp, ConcurrencyStamp, PhoneNumber, PhoneNumberConfirmed,
+        TwoFactorEnabled, LockoutEnd, LockoutEnabled, AccessFailedCount
+    )
+    VALUES
+    (
+        @DemoUserId, @Now, @Now, 'demo.user', 'DEMO.USER', 'demo.user@dotnetlabs.local', 'DEMO.USER@DOTNETLABS.LOCAL', 1,
+        NULL, NEWID(), NEWID(), NULL, 0,
+        0, NULL, 0, 0
+    );
+END;
+
+IF NOT EXISTS (SELECT 1 FROM Titles WHERE Name = N'Demo Duplicate Title' AND ReleaseDate = '2018-01-10')
+BEGIN
+    INSERT INTO Titles
+    (
+        Name, Overview, Runtime, IsAdult, UpdatedAt, ReleaseDate, AvgTmdbRating, Director, Genres
+    )
+    VALUES
+    (
+        N'Demo Duplicate Title', N'Demo row for SQL task', 110, 0, @Now, '2018-01-10', 7.4, N'Demo Director A', N'Drama,Action'
+    );
+END;
+
+IF NOT EXISTS (SELECT 1 FROM Titles WHERE Name = N'Demo Duplicate Title' AND ReleaseDate = '2020-08-21')
+BEGIN
+    INSERT INTO Titles
+    (
+        Name, Overview, Runtime, IsAdult, UpdatedAt, ReleaseDate, AvgTmdbRating, Director, Genres
+    )
+    VALUES
+    (
+        N'Demo Duplicate Title', N'Demo row for SQL task', 112, 0, @Now, '2020-08-21', 6.9, N'Demo Director B', N'Drama,Action'
+    );
+END;
+
+IF NOT EXISTS (SELECT 1 FROM Titles WHERE Name = N'Demo Sci-Fi One')
+BEGIN
+    INSERT INTO Titles
+    (
+        Name, Overview, Runtime, IsAdult, UpdatedAt, ReleaseDate, AvgTmdbRating, Director, Genres
+    )
+    VALUES
+    (
+        N'Demo Sci-Fi One', N'Demo row for SQL task', 124, 0, @Now, '2019-05-11', 8.1, N'Demo Director C', N'Sci-Fi,Adventure'
+    );
+END;
+
+IF NOT EXISTS (SELECT 1 FROM Titles WHERE Name = N'Demo Sci-Fi Two')
+BEGIN
+    INSERT INTO Titles
+    (
+        Name, Overview, Runtime, IsAdult, UpdatedAt, ReleaseDate, AvgTmdbRating, Director, Genres
+    )
+    VALUES
+    (
+        N'Demo Sci-Fi Two', N'Demo row for SQL task', 98, 0, @Now, '2021-10-02', 7.7, N'Demo Director D', N'Sci-Fi,Thriller'
+    );
+END;
+
+DECLARE @DemoWatchListId BIGINT;
+SELECT @DemoWatchListId = wl.Id
+FROM WatchLists wl
+WHERE wl.UserId = @DemoUserId AND wl.Name LIKE N'Demo WatchList%';
+
+IF @DemoWatchListId IS NULL
+BEGIN
+    INSERT INTO WatchLists (UserId, Name)
+    VALUES (@DemoUserId, N'Demo WatchList');
+
+    SET @DemoWatchListId = SCOPE_IDENTITY();
+END;
+
+-- Базові оцінки для демонстрації функції "highest by date"
+INSERT INTO Votes (TitleId, UserId, [Value], UpdatedAt)
+SELECT t.Id, @DemoUserId, 8, '2026-05-05T09:00:00'
+FROM Titles t
+WHERE t.Name = N'Demo Sci-Fi One'
+  AND NOT EXISTS
+  (
+      SELECT 1
+      FROM Votes v
+      WHERE v.TitleId = t.Id
+        AND v.UserId = @DemoUserId
+        AND CAST(v.UpdatedAt AS date) = '2026-05-05'
+  );
+
+INSERT INTO Votes (TitleId, UserId, [Value], UpdatedAt)
+SELECT t.Id, @DemoUserId, 10, '2026-05-05T10:00:00'
+FROM Titles t
+WHERE t.Name = N'Demo Duplicate Title'
+  AND t.ReleaseDate = '2018-01-10'
+  AND NOT EXISTS
+  (
+      SELECT 1
+      FROM Votes v
+      WHERE v.TitleId = t.Id
+        AND v.UserId = @DemoUserId
+        AND CAST(v.UpdatedAt AS date) = '2026-05-05'
+  );
+
+-- Наповнення списку 11 різними позиціями для перевірки тригера.
+;WITH DemoTitles AS
+(
+    SELECT TOP (11) t.Id
+    FROM Titles t
+    ORDER BY t.Id
+)
+INSERT INTO WatchListItems (WatchListId, TitleId)
+SELECT @DemoWatchListId, dt.Id
+FROM DemoTitles dt
+WHERE NOT EXISTS
+(
+    SELECT 1
+    FROM WatchListItems wli
+    WHERE wli.WatchListId = @DemoWatchListId AND wli.TitleId = dt.Id
+);
+
+-- EXEC Add_Vote @TitleName = 'Demo Duplicate Title', @Email = 'demo.user@dotnetlabs.local', @VoteValue = 9;
+-- SELECT * FROM dbo.Get_Title_Info_By_Genre(N'Sci-Fi', 2);
+-- SELECT dbo.Get_Title_With_Highest_Rating_By_Date('2026-05-05') AS HighestRated;

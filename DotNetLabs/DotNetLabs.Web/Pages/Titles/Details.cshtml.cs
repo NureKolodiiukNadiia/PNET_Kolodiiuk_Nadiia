@@ -17,7 +17,7 @@ public class DetailsModel : PageModel
     public Title Title { get; private set; }
 
     [BindProperty(SupportsGet = true)]
-    public int Page { get; set; } = 1;
+    public int PageNumber { get; set; } = 1;
 
     [BindProperty(SupportsGet = true)]
     public int PageSize { get; set; } = 10;

@@ -10,7 +10,7 @@
     <div class="col-12 col-lg-8">
         <form method="post">
             <input type="hidden" asp-for="Input.TitleId" />
-            <input type="hidden" asp-for="Page" />
+            <input type="hidden" asp-for="PageNumber" />
             <input type="hidden" asp-for="PageSize" />
             <div class="mb-2">
                 <label asp-for="Input.Name" class="form-label"></label>
@@ -73,7 +73,7 @@
                 <input asp-for="Input.SpokenLanguages" class="form-control" />
             </div>
             <button type="submit" class="btn btn-primary">Update</button>
-            <a asp-page="/Index" asp-route-page="@Model.Page" asp-route-pageSize="@Model.PageSize" class="btn btn-link">Cancel</a>
+            <a asp-page="/Index" asp-route-pageNumber="@Model.PageNumber" asp-route-pageSize="@Model.PageSize" class="btn btn-link">Cancel</a>
         </form>
     </div>
 </div>

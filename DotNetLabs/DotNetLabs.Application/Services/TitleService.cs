@@ -4,17 +4,26 @@ using DotNetLabs.Application.Models.Content;
 using DotNetLabs.Core.Entities;
 using DotNetLabs.Core.Models;
 using DotNetLabs.Infrastructure.DbContexts;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace DotNetLabs.Application.Services;
 
 public class TitleService : ITitleService
 {
-    private readonly AppDbContext _dbContext;
+    private static readonly DistributedCacheEntryOptions CacheOptions = new()
+    {
+        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+    };
 
-    public TitleService(AppDbContext dbContext)
+    private readonly AppDbContext _dbContext;
+    private readonly IDistributedCache _cache;
+
+    public TitleService(AppDbContext dbContext, IDistributedCache cache)
     {
         _dbContext = dbContext;
+        _cache = cache;
     }
 
     public async Task<Result<IEnumerable<TitleShortInfo>>> GetAllTitlesPagedAsync(int page, int pageSize, CancellationToken ct)
@@ -22,6 +31,18 @@ public class TitleService : ITitleService
         ct.ThrowIfCancellationRequested();
         try
         {
+            var cacheVersion = await GetCacheVersionAsync(ct);
+            var cacheKey = $"titles:list:v{cacheVersion}:p{page}:s{pageSize}";
+            var cached = await _cache.GetStringAsync(cacheKey, ct);
+            if (!string.IsNullOrWhiteSpace(cached))
+            {
+                var fromCache = JsonSerializer.Deserialize<List<TitleShortInfo>>(cached);
+                if (fromCache != null)
+                {
+                    return Result.Success<IEnumerable<TitleShortInfo>>(fromCache);
+                }
+            }
+
             var query = _dbContext.Titles
                 .OrderBy(t => t.Id)
                 .Skip((page - 1) * pageSize)
@@ -29,7 +50,10 @@ public class TitleService : ITitleService
                 .Select(t => new TitleShortInfo(t.Id, t.Name, t.PosterUrl, t.AvgTmdbRating))
                 .AsNoTracking();
 
-            return Result.Success<IEnumerable<TitleShortInfo>>(await query.ToListAsync(ct));
+            var titles = await query.ToListAsync(ct);
+            await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(titles), CacheOptions, ct);
+
+            return Result.Success<IEnumerable<TitleShortInfo>>(titles);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -57,7 +81,7 @@ public class TitleService : ITitleService
             var query = _dbContext.Titles
                 .Where(t => EF.Functions.Like(t.Name, pattern))
                 .OrderBy(t => t.Id)
-                .Skip((page - 0) * pageSize)
+                .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .Select(t => new TitleShortInfo(t.Id, t.Name, t.PosterUrl, t.AvgTmdbRating))
                 .AsNoTracking();
@@ -83,7 +107,26 @@ public class TitleService : ITitleService
         ct.ThrowIfCancellationRequested();
         try
         {
-            var title = await _dbContext.Titles.FirstOrDefaultAsync(t => t.Id == titleId, ct);
+            var cacheVersion = await GetCacheVersionAsync(ct);
+            var cacheKey = $"titles:by-id:v{cacheVersion}:id{titleId}";
+            var cached = await _cache.GetStringAsync(cacheKey, ct);
+            if (!string.IsNullOrWhiteSpace(cached))
+            {
+                var cachedTitle = JsonSerializer.Deserialize<Title>(cached);
+                if (cachedTitle != null)
+                {
+                    return Result.Success(cachedTitle);
+                }
+            }
+
+            var title = await _dbContext.Titles
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Id == titleId, ct);
+
+            if (title != null)
+            {
+                await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(title), CacheOptions, ct);
+            }
 
             return title switch
             {
@@ -131,6 +174,7 @@ public class TitleService : ITitleService
             };
             await _dbContext.Titles.AddAsync(title, ct);
             await _dbContext.SaveChangesAsync(ct);
+            await BumpCacheVersionAsync(ct);
 
             return Result.Success();
         }
@@ -176,6 +220,7 @@ public class TitleService : ITitleService
             title.SpokenLanguages = request.SpokenLanguages;
             title.UpdatedAt = DateTime.UtcNow;
             await _dbContext.SaveChangesAsync(ct);
+            await BumpCacheVersionAsync(ct);
 
             return Result.Success();
         }
@@ -206,6 +251,7 @@ public class TitleService : ITitleService
 
             _dbContext.Titles.Remove(title);
             await _dbContext.SaveChangesAsync(ct);
+            await BumpCacheVersionAsync(ct);
 
             return Result.Success();
         }
@@ -221,5 +267,24 @@ public class TitleService : ITitleService
         {
             return Result.Fail(e.Message);
         }
+    }
+
+    private async Task<int> GetCacheVersionAsync(CancellationToken ct)
+    {
+        var value = await _cache.GetStringAsync("titles:cache-version", ct);
+        if (int.TryParse(value, out var version))
+        {
+            return version;
+        }
+
+        await _cache.SetStringAsync("titles:cache-version", "1", CacheOptions, ct);
+
+        return 1;
+    }
+
+    private async Task BumpCacheVersionAsync(CancellationToken ct)
+    {
+        var version = await GetCacheVersionAsync(ct);
+        await _cache.SetStringAsync("titles:cache-version", (version + 1).ToString(), CacheOptions, ct);
     }
 }

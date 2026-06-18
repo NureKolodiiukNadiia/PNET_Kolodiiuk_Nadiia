@@ -8,6 +8,8 @@ internal sealed class WatchListItemConfiguration : IEntityTypeConfiguration<Watc
 {
     public void Configure(EntityTypeBuilder<WatchListItem> builder)
     {
+        builder.ToTable("WatchListItems", tb => tb.HasTrigger("trg_WatchListItems_AfterInsert"));
+
         builder.HasKey(wi => wi.Id);
 
         builder.Property(wi => wi.Id);

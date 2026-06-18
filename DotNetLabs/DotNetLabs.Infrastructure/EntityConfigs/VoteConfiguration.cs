@@ -8,6 +8,8 @@ internal sealed class VoteConfiguration : IEntityTypeConfiguration<Vote>
 {
     public void Configure(EntityTypeBuilder<Vote> builder)
     {
+        builder.ToTable("Votes", tb => tb.HasTrigger("trg_Votes_RecalculateTitleRating"));
+
         builder.HasKey(v => v.Id);
 
         builder.Property(v => v.Id);

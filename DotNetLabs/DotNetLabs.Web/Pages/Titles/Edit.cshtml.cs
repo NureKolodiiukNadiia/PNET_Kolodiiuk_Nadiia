@@ -17,7 +17,7 @@ public class EditModel : PageModel
     public TitleUpdateInputModel Input { get; set; } = new();
 
     [BindProperty(SupportsGet = true)]
-    public int Page { get; set; } = 1;
+    public int PageNumber { get; set; } = 1;
 
     [BindProperty(SupportsGet = true)]
     public int PageSize { get; set; } = 10;
@@ -43,6 +43,6 @@ public class EditModel : PageModel
             return Page();
         }
 
-        return RedirectToPage("/Index", new { page = Page, pageSize = PageSize });
+        return RedirectToPage("/Index", new { pageNumber = PageNumber, pageSize = PageSize });
     }
 }

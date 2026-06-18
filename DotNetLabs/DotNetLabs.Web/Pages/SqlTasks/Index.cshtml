@@ -1,0 +1,105 @@
+@page
+@model DotNetLabs.Web.Pages.SqlTasks.IndexModel
+@{
+    ViewData["Title"] = "SQL Tasks";
+}
+
+<h1>SQL Tasks Demo</h1>
+<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+<div class="row">
+    <div class="col-12 col-lg-6">
+        <div class="card mb-3">
+            <div class="card-header">Stored Procedure: Add_Vote</div>
+            <div class="card-body">
+                <form method="post" asp-page-handler="AddVote">
+                    <div class="mb-2">
+                        <label asp-for="AddVote.TitleName" class="form-label"></label>
+                        <input asp-for="AddVote.TitleName" class="form-control" />
+                    </div>
+                    <div class="mb-2">
+                        <label asp-for="AddVote.Email" class="form-label"></label>
+                        <input asp-for="AddVote.Email" class="form-control" />
+                    </div>
+                    <div class="mb-2">
+                        <label asp-for="AddVote.VoteValue" class="form-label"></label>
+                        <input asp-for="AddVote.VoteValue" class="form-control" />
+                    </div>
+                    <button type="submit" class="btn btn-primary">Execute</button>
+                </form>
+                @if (!string.IsNullOrWhiteSpace(Model.ProcedureResult))
+                {
+                    <div class="mt-2 text-success">@Model.ProcedureResult</div>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-6">
+        <div class="card mb-3">
+            <div class="card-header">Function: Get_Title_With_Highest_Rating_By_Date</div>
+            <div class="card-body">
+                <form method="post" asp-page-handler="HighestByDate">
+                    <div class="mb-2">
+                        <label asp-for="DateFilter.VoteDate" class="form-label"></label>
+                        <input asp-for="DateFilter.VoteDate" class="form-control" type="date" />
+                    </div>
+                    <button type="submit" class="btn btn-primary">Execute</button>
+                </form>
+                @if (!string.IsNullOrWhiteSpace(Model.HighestRatedTitleResult))
+                {
+                    <div class="mt-2"><strong>Result:</strong> @Model.HighestRatedTitleResult</div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">Table Function: Get_Title_Info_By_Genre</div>
+    <div class="card-body">
+        <form method="post" asp-page-handler="Genre" class="row g-2 align-items-end">
+            <div class="col-12 col-md-4">
+                <label asp-for="GenreFilter.Genre" class="form-label"></label>
+                <input asp-for="GenreFilter.Genre" class="form-control" />
+            </div>
+            <div class="col-12 col-md-2">
+                <label asp-for="GenreFilter.I" class="form-label"></label>
+                <input asp-for="GenreFilter.I" class="form-control" />
+            </div>
+            <div class="col-12 col-md-2">
+                <button type="submit" class="btn btn-primary">Execute</button>
+            </div>
+        </form>
+
+        @if (Model.GenreResults != null && Model.GenreResults.Any())
+        {
+            <table class="table table-striped mt-3">
+                <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>ReleaseDate</th>
+                    <th>Rating</th>
+                    <th>Director</th>
+                    <th>Genres</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var row in Model.GenreResults)
+                {
+                    <tr>
+                        <td>@row.Name</td>
+                        <td>@row.ReleaseDate?.ToString("yyyy-MM-dd")</td>
+                        <td>@(row.Rating?.ToString("0.0") ?? "-")</td>
+                        <td>@row.Director</td>
+                        <td>@row.Genres</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
